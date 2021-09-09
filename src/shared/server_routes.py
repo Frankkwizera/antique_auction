@@ -15,4 +15,5 @@ class ItemManagementServerRoutes:
 
 class BidManagementServerRoutes:
     CREATE_BID = "/create/bid"
+    REGISTER_USER_AUTO_CONFI_BID = "/register/auto/bid/config"
     REGISTER_AUTO_BID = "/register/auto/bid"

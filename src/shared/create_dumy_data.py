@@ -58,7 +58,7 @@ class DummyDataCreator:
                 'item_description': 'Item 1 description',
                 'item_base_price_in_usd': 200,
                 'item_owner_uuid': created_users[0]['user_uuid'],
-                'bid_expiration_timestamp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
+                'bid_expiration_timestamp': datetime.datetime.utcnow() + datetime.timedelta(minutes=1)
             },
             {
                 'item_name': 'Item 2', 

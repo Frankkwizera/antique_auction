@@ -3,11 +3,11 @@ __author__ = "Frank Kwizera"
 from src.storage.database_provider import db_provider
 from sqlalchemy.orm.session import sessionmaker as Session
 from flask_sqlalchemy import SQLAlchemy
-from src.storage.database_tables import User, Item, Bid, AutoBid
+from src.storage.database_tables import User, Item, Bid, AutoBid, UserAutoBid
 from werkzeug.security import generate_password_hash, check_password_hash
 from src.shared.constants import GeneralConstants
 from flask import Flask
-from typing import List
+from typing import List, Tuple
 import datetime
 
 db: SQLAlchemy = db_provider.db
@@ -44,8 +44,6 @@ class UserDatabaseClient(DatabaseClient):
     
     def authenticate_user(self, user_email: str, user_password: str) -> User:
         user: User = self.session.query(User).filter(User.user_email == user_email).first()
-        print("<<<<<<< user.user_password_hash: ", user.user_password_hash)
-        print("<<<<<<< user_password: ", user_password)
         if user and check_password_hash(user.user_password_hash, user_password):
             return user
         return None
@@ -103,15 +101,25 @@ class ItemDatabaseClient(DatabaseClient):
             - True if item exists, otherwise False.
         """
         return self.session.query(Item).filter(Item.item_uuid == item_uuid).scalar() is not None
+    
+    def retrieve_item_close_date(self, item_uuid: str) -> datetime.datetime:
+        """
+        Retrieves item close date.
+        Inputs:
+            - item_uuid: UUID representing the target item record.
+        Returns:
+            - Item closing date.
+        """
+        return self.session.query(Item.bid_expiration_timestamp).filter(
+            Item.item_uuid == item_uuid).one_or_none()[0]
 
 
 class BidDatabaseClient(DatabaseClient):
     def __init__(self, *args, **kwargs):
         DatabaseClient.__init__(self, *args, **kwargs)
     
-    def create_item_bid(
-            self, bid_price_in_usd: int, bid_item_uuid: str,
-            bidder_uuid: str) -> Bid:
+    def create_item_bid(self, bid_price_in_usd: int, 
+                        bid_item_uuid: str, bidder_uuid: str) -> Bid:
         new_bid: Bid = Bid(bid_price_in_usd=bid_price_in_usd, bid_item_uuid=bid_item_uuid, bidder_uuid=bidder_uuid)
         self.add_to_database(records=[new_bid])
         return new_bid
@@ -132,12 +140,19 @@ class AutoBidDatabaseClient(DatabaseClient):
     def __init__(self, *args, **kwargs):
         DatabaseClient.__init__(self, *args, **kwargs)
     
-    def register_auto_bid(
-            self, bid_item_uuid: str, bidder_uuid: str,
-            max_bid_amount_in_usd: int) -> AutoBid:
-        auto_bid: AutoBid = AutoBid(
-            bid_item_uuid=bid_item_uuid, bidder_uuid=bidder_uuid, 
-            max_bid_amount_in_usd=max_bid_amount_in_usd)
+    def register_user_auto_bid_config(
+            self, bidder_uuid: str, max_bid_amount_in_usd: int):
+        user_auto_bid: UserAutoBid = \
+            UserAutoBid(bidder_uuid=bidder_uuid, max_bid_amount_in_usd=max_bid_amount_in_usd)
+        self.add_to_database(records=[user_auto_bid])
+        return user_auto_bid
+    
+    def check_if_user_auto_bidder_config_exists(self, bidder_uuid: str) -> bool:
+        return self.session.query(UserAutoBid).filter(
+            UserAutoBid.bidder_uuid == bidder_uuid).scalar() is not None
+    
+    def register_auto_bid(self, bid_item_uuid: str, bidder_uuid: str) -> AutoBid:
+        auto_bid: AutoBid = AutoBid(bid_item_uuid=bid_item_uuid, bidder_uuid=bidder_uuid)
         self.add_to_database(records=[auto_bid])
         return auto_bid
     
@@ -150,10 +165,34 @@ class AutoBidDatabaseClient(DatabaseClient):
         return self.session.query(AutoBid).filter(
             AutoBid.bid_item_uuid == item_uuid).all()
     
-    def retrieve_item_auto_bidders_with_enough_funds(
-            self, item_uuid: str, highest_bider_uuid: str, current_highest_bid: int) -> List[AutoBid]:
-        return self.session.query(AutoBid).filter(
+    def retrieve_item_auto_bidders_uuids_with_enough_funds(
+            self, item_uuid: str, highest_bider_uuid: str, current_highest_bid: int) -> List[str]:
+        """
+        Retrieves auto bidders uuids with enough funds to place a bid.
+        Inputs:
+            - item_uuid: UUID representing a target item to place a bid on.
+            - highest_bider_uuid: Current highest bidder uuid.
+            - current_highest_bid: Current highest bid on the item.
+        Returns:
+            - List of auto bidders uuids.
+        """
+        item_auto_bidders_uuids: Tuple[str] = self.session.query(AutoBid.bidder_uuid).filter(
             AutoBid.bid_item_uuid == item_uuid,
-            AutoBid.bidder_uuid != highest_bider_uuid,
-            AutoBid.max_bid_amount_in_usd > current_highest_bid).all()
+            AutoBid.bidder_uuid != highest_bider_uuid).all()
+
+        auto_bidders_with_enough_funds: List[str] = []
+        for item_auto_bidder_uuid, in item_auto_bidders_uuids:
+            auto_bidder_max_bid_amount_in_usd: int = \
+                self.session.query(UserAutoBid.max_bid_amount_in_usd).filter(
+                    UserAutoBid.bidder_uuid == item_auto_bidder_uuid).one_or_none()[0]
+            number_of_bids_registered_by_user: int = self.session.query(AutoBid).filter(
+                AutoBid.bidder_uuid == item_auto_bidder_uuid).count()
+            average_bid_per_item: int = auto_bidder_max_bid_amount_in_usd / number_of_bids_registered_by_user
+
+            if average_bid_per_item > current_highest_bid:
+                auto_bidders_with_enough_funds.append(item_auto_bidder_uuid)
+
+        return auto_bidders_with_enough_funds
+        
+
         

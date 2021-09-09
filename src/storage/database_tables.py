@@ -6,7 +6,6 @@ from flask_sqlalchemy import SQLAlchemy
 import datetime
 import uuid
 
-
 db: SQLAlchemy = db_provider.db
 
 
@@ -110,10 +109,37 @@ class Bid(db.Model):
         }
 
 
+class UserAutoBid(db.Model):
+    user_auto_bid_id = db.Column(db.BigInteger().with_variant(db.Integer, "sqlite"), primary_key=True)
+    user_auto_bid_uuid = db.Column(db.String(GeneralConstants.UUID_MAX_LENGTH), unique=True, index=True, nullable=False)
+    max_bid_amount_in_usd = db.Column(db.BigInteger().with_variant(db.Integer, "sqlite"), nullable=False)
+    bidder_uuid = db.Column(
+        db.String(GeneralConstants.UUID_MAX_LENGTH), 
+        db.ForeignKey('user.user_uuid', onupdate='CASCADE', ondelete='RESTRICT'), nullable=False, unique=True)
+    
+    def __init__(self, bidder_uuid: str, max_bid_amount_in_usd: int):
+        self.user_auto_bid_uuid = str(uuid.uuid4())
+        self.bidder_uuid = bidder_uuid
+        self.max_bid_amount_in_usd = max_bid_amount_in_usd
+
+    def __repr__(self):
+        return f'<UserAutoBid: {self.user_auto_bid_uuid} {self.bidder_uuid}>'
+
+    def to_json_dict(self):
+        """
+        Returns serializable format.
+        """
+        return {
+            'user_auto_bid_id': self.user_auto_bid_id,
+            'user_auto_bid_uuid': self.user_auto_bid_uuid,
+            'max_bid_amount_in_usd': self.max_bid_amount_in_usd,
+            'bidder_uuid': self.bidder_uuid
+        }
+
+
 class AutoBid(db.Model):
     auto_bid_id = db.Column(db.BigInteger().with_variant(db.Integer, "sqlite"), primary_key=True)
     auto_bid_uuid = db.Column(db.String(GeneralConstants.UUID_MAX_LENGTH), unique=True, index=True, nullable=False)
-    max_bid_amount_in_usd = db.Column(db.BigInteger().with_variant(db.Integer, "sqlite"), nullable=False)
     bid_item_uuid = db.Column(
         db.String(GeneralConstants.UUID_MAX_LENGTH), 
         db.ForeignKey('item.item_uuid', onupdate='CASCADE', ondelete='RESTRICT'), nullable=False)
@@ -123,11 +149,10 @@ class AutoBid(db.Model):
     
     __table_args__ = (db.UniqueConstraint('bid_item_uuid', 'bidder_uuid'), )
     
-    def __init__(self, bid_item_uuid: str, bidder_uuid: str, max_bid_amount_in_usd: int):
+    def __init__(self, bid_item_uuid: str, bidder_uuid: str):
         self.auto_bid_uuid = str(uuid.uuid4())
         self.bid_item_uuid = bid_item_uuid
         self.bidder_uuid = bidder_uuid
-        self.max_bid_amount_in_usd = max_bid_amount_in_usd
 
     def __repr__(self):
         return "<AutoBid: {} {}>".format(self.auto_bid_uuid, self.bid_item_uuid)
@@ -140,6 +165,5 @@ class AutoBid(db.Model):
             'auto_bid_id': self.auto_bid_id,
             'auto_bid_uuid': self.auto_bid_uuid,
             'bid_item_uuid': self.bid_item_uuid,
-            'bidder_uuid': self.bidder_uuid,
-            'max_bid_amount_in_usd': self.max_bid_amount_in_usd
+            'bidder_uuid': self.bidder_uuid
         }
