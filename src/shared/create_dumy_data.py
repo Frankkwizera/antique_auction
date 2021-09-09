@@ -69,8 +69,20 @@ class DummyDataCreator:
             }
         ]
 
-        for auction_item in self.auction_items:
-            item_dict: Dict[str, str] = self.create_item(auction_item_dict=auction_item)
+        item_base_price_in_usd: int = 250
+        for index in range(30):
+            auction_item_dict: Dict[str, Union[str, int]] = {
+                'item_name': f'Item {index + 1}', 
+                'item_description': f'Item {index + 1} description',
+                'item_base_price_in_usd': item_base_price_in_usd,
+                'item_owner_uuid': created_users[0]['user_uuid'],
+                'bid_expiration_timestamp': datetime.datetime.utcnow() + datetime.timedelta(minutes=15)
+            }
+            item_dict: Dict[str, str] = self.create_item(auction_item_dict=auction_item_dict)
+            
+            # Increase item_base_price_in_usd for the next item.
+            item_base_price_in_usd += 50
+            
             # Create one dummy bid.
             bid_dict: Dict[str, str] = {
                 'bid_price_in_usd': 250, 

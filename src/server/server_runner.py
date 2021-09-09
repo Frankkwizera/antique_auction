@@ -6,6 +6,7 @@ from src.server.item_management_server import ItemManagementServer
 from src.server.bid_management import BidManagementServer
 from src.get_app import get_app
 from src.storage.database_provider import db_provider
+from flask_cors import CORS
 
 db = db_provider.db
 
@@ -13,6 +14,7 @@ class AuctionServerRunner:
     def __init__(self):
         self.debug: bool = True
         self.app: Flask = get_app()
+        CORS(self.app)
 
         # Initialize database tables.
         with self.app.app_context():

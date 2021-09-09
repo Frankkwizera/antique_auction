@@ -8,27 +8,6 @@ import functools
 
 class ServerHelper:
     @staticmethod
-    def login_required(func: Callable):
-        """
-        Checks if user uuid is stored in the session.
-        Inputs:
-            - func: Method to be executed after checking if staff id is stored in the session.
-        Returns:
-            - Throw a 403 error if there is no staff id stored in the session,
-              otherwise returns the execution response of the given method.
-        """
-        @functools.wraps(func)
-        def wrapper(self, *args, **kwargs):
-            if not session.get('user_uuid'):
-                return ServerHelper.create_http_response(
-                    message='Login required.',
-                    status=status.HTTP_403_FORBIDDEN)
-
-            func_result: Any = func(self, *args, **kwargs)
-            return func_result
-        return wrapper
-
-    @staticmethod
     def create_item_not_found_message(message: str = 'Object not found.') -> wrappers.Response:
         """
         Creates and return item not found response.

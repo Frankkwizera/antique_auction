@@ -38,7 +38,6 @@ class BidManagementServer:
             BidManagementServerRoutes.REGISTER_USER_AUTO_CONFI_BID, endpoint="register_user_auto_bid_configuration",
             view_func=self.register_user_auto_bid_configuration, methods=['POST'])
     
-    @ServerHelper.login_required
     def register_user_auto_bid_configuration(self) -> wrappers.Response:
         """
         Registers user auto bid configuration.
@@ -60,8 +59,6 @@ class BidManagementServer:
                 bidder_uuid=bidder_uuid, max_bid_amount_in_usd=max_bid_amount_in_usd)
         return jsonify(user_auto_bid.to_json_dict())
 
-    
-    @ServerHelper.login_required
     def register_auto_bid(self) -> wrappers.Response:
         """
         Registers auto bid on an item.
@@ -92,7 +89,6 @@ class BidManagementServer:
                 bid_item_uuid=bid_item_uuid, bidder_uuid=bidder_uuid)
         return jsonify(new_auto_bid.to_json_dict())
 
-    @ServerHelper.login_required
     def submit_a_bid(self) -> wrappers.Response:
         """
         Submits the item bid.
@@ -122,7 +118,6 @@ class BidManagementServer:
             self.place_a_bid(bid_item_uuid=bid_item_uuid, bidder_uuid=bidder_uuid, bid_price_in_usd=bid_price_in_usd)
         return new_bid_response
     
-    @ServerHelper.login_required
     def place_a_bid(self, bid_item_uuid: str, bidder_uuid: str, bid_price_in_usd: int) -> wrappers.Response:
         """
         Places an item bid with a given amount.

@@ -26,7 +26,6 @@ class ItemManagementServer:
         app.add_url_rule(ItemManagementServerRoutes.RETRIEVE_ALL_ITEMS, endpoint="retrieve_all_items", view_func=self.retrieve_all_items, methods=['GET'])
         app.add_url_rule(ItemManagementServerRoutes.RETRIEVE_ITEM_DETAILS + '/<string:item_uuid>', endpoint="retrieve_item_details", view_func=self.retrieve_item_details, methods=['GET'])
 
-    @ServerHelper.login_required
     def retrieve_all_items(self) -> wrappers.Response:
         """
         Retrieves all stored items.
@@ -36,7 +35,6 @@ class ItemManagementServer:
         all_items: List[Item] = self.item_database_client.retrieve_all_items()
         return jsonify([item.to_json_dict() for item in all_items])
     
-    @ServerHelper.login_required
     def retrieve_item_details(self, item_uuid: str) -> wrappers.Response:
         """
         Retrieves single item details.
