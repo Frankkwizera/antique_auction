@@ -11,4 +11,5 @@ class ItemManagementServerRoutes:
     RETRIEVE_ITEM_DETAILS = "/retrieve/item/details/"
 
 class BidManagementServerRoutes:
-    PLACE_A_BID = "/place/a/bid"
+    CREATE_BID = "/create/bid"
+    REGISTER_AUTO_BID = "/register/auto/bid"

@@ -3,6 +3,7 @@ __author__ = "Frank Kwizera"
 from flask import Flask
 from src.server.user_management_server import UserManagementServer
 from src.server.item_management_server import ItemManagementServer
+from src.server.bid_management import BidManagementServer
 from src.get_app import get_app
 from src.storage.database_provider import db_provider
 
@@ -23,6 +24,7 @@ class AuctionServerRunner:
         """
         self.user_management_server: UserManagementServer = UserManagementServer()
         self.item_management_server: ItemManagementServer = ItemManagementServer()
+        self.bid_management_server: BidManagementServer = BidManagementServer()
 
     def start(self, port: int = None):
         """

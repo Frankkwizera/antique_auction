@@ -3,7 +3,7 @@ __author__ = "Frank Kwizera"
 from src.storage.database_provider import db_provider
 from sqlalchemy.orm.session import sessionmaker as Session
 from flask_sqlalchemy import SQLAlchemy
-from src.storage.database_tables import User, Item, Bid
+from src.storage.database_tables import User, Item, Bid, AutoBid
 from werkzeug.security import generate_password_hash
 from src.shared.constants import GeneralConstants
 from flask import Flask
@@ -41,6 +41,16 @@ class UserDatabaseClient(DatabaseClient):
         new_user: User = User(user_names=user_names, user_email=user_email, user_password_hash=user_password_hash)
         self.add_to_database(records=[new_user])
         return new_user
+    
+    def check_if_user_exists(self, user_uuid: str) -> bool:
+        """
+        Checks if an user exists.
+        Inputs:
+            - user_uuid: UUID representing a target user.
+        Returns:
+            - True if item user, otherwise False.
+        """
+        return self.session.query(User).filter(User.user_uuid == user_uuid).scalar() is not None
 
 
 class ItemDatabaseClient(DatabaseClient):
@@ -75,6 +85,16 @@ class ItemDatabaseClient(DatabaseClient):
             - Item record.
         """
         return self.session.query(Item).filter(Item.item_uuid == item_uuid).one_or_none()
+    
+    def check_if_item_exists(self, item_uuid: str) -> bool:
+        """
+        Checks if an item exists.
+        Inputs:
+            - item_uuid: UUID representing a target item.
+        Returns:
+            - True if item exists, otherwise False.
+        """
+        return self.session.query(Item).filter(Item.item_uuid == item_uuid).scalar() is not None
 
 
 class BidDatabaseClient(DatabaseClient):
@@ -90,3 +110,26 @@ class BidDatabaseClient(DatabaseClient):
 
     def retrieve_item_bids(self, item_uuid: str) -> List[Bid]:
         return self.session.query(Bid).filter(Bid.bid_item_uuid == item_uuid).all()
+    
+    def retrieve_item_most_recent_bid(self, item_uuid: str) -> List[Bid]:
+        """
+        Retrieves item most recent bid.
+        Returns:
+            - Item most recent bid record.
+        """
+        return self.session.query(Bid).filter(Bid.bid_item_uuid == item_uuid).order_by(Bid.bid_id.desc()).first()
+
+
+class AutoBidDatabaseClient(DatabaseClient):
+    def __init__(self, *args, **kwargs):
+        DatabaseClient.__init__(self, *args, **kwargs)
+    
+    def register_auto_bid(self, bid_item_uuid: str, bidder_uuid: str) -> AutoBid:
+        auto_bid: AutoBid = AutoBid(bid_item_uuid=bid_item_uuid, bidder_uuid=bidder_uuid)
+        self.add_to_database(records=[auto_bid])
+        return auto_bid
+    
+    def check_if_user_auto_bid_exists(self, bid_item_uuid: str, bidder_uuid: str) -> bool:
+        return self.session.query(AutoBid).filter(
+            AutoBid.bid_item_uuid == bid_item_uuid, 
+            AutoBid.bidder_uuid == bidder_uuid).scalar() is not None

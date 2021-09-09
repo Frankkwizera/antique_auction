@@ -108,3 +108,35 @@ class Bid(db.Model):
             'bid_item_uuid': self.bid_item_uuid,
             'bidder_uuid': self.bidder_uuid
         }
+
+
+class AutoBid(db.Model):
+    auto_bid_id = db.Column(db.BigInteger().with_variant(db.Integer, "sqlite"), primary_key=True)
+    auto_bid_uuid = db.Column(db.String(GeneralConstants.UUID_MAX_LENGTH), unique=True, index=True, nullable=False)
+    bid_item_uuid = db.Column(
+        db.String(GeneralConstants.UUID_MAX_LENGTH), 
+        db.ForeignKey('item.item_uuid', onupdate='CASCADE', ondelete='RESTRICT'), nullable=False)
+    bidder_uuid = db.Column(
+        db.String(GeneralConstants.UUID_MAX_LENGTH), 
+        db.ForeignKey('user.user_uuid', onupdate='CASCADE', ondelete='RESTRICT'), nullable=False)
+    
+    __table_args__ = (db.UniqueConstraint('bid_item_uuid', 'bidder_uuid'), )
+    
+    def __init__(self, bid_item_uuid: str, bidder_uuid: str):
+        self.auto_bid_uuid = str(uuid.uuid4())
+        self.bid_item_uuid = bid_item_uuid
+        self.bidder_uuid = bidder_uuid
+
+    def __repr__(self):
+        return "<AutoBid: {} {}>".format(self.auto_bid_uuid, self.bid_item_uuid)
+
+    def to_json_dict(self):
+        """
+        Returns serializable format.
+        """
+        return {
+            'auto_bid_id': self.auto_bid_id,
+            'auto_bid_uuid': self.auto_bid_uuid,
+            'bid_item_uuid': self.bid_item_uuid,
+            'bidder_uuid': self.bidder_uuid
+        }
