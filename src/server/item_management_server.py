@@ -4,7 +4,7 @@ from src.shared.server_routes import ItemManagementServerRoutes
 from src.storage.database_client import ItemDatabaseClient, BidDatabaseClient, AutoBidDatabaseClient
 from src.storage.database_tables import Item, Bid
 from src.server.server_helper import ServerHelper
-from flask import jsonify, Flask
+from flask import jsonify, Flask, wrappers
 from src.get_app import get_app
 from typing import List, Dict, Union
 
@@ -20,11 +20,14 @@ class ItemManagementServer:
         self.auto_bid_database_client: AutoBidDatabaseClient = AutoBidDatabaseClient()
 
     def map_endpoints(self, app: Flask):
+        """
+        Maps all item management server routes to the corresponding methods.
+        """
         app.add_url_rule(ItemManagementServerRoutes.RETRIEVE_ALL_ITEMS, endpoint="retrieve_all_items", view_func=self.retrieve_all_items, methods=['GET'])
         app.add_url_rule(ItemManagementServerRoutes.RETRIEVE_ITEM_DETAILS + '/<string:item_uuid>', endpoint="retrieve_item_details", view_func=self.retrieve_item_details, methods=['GET'])
 
     @ServerHelper.login_required
-    def retrieve_all_items(self) -> List[Dict[str, Union[str, int]]]:
+    def retrieve_all_items(self) -> wrappers.Response:
         """
         Retrieves all stored items.
         Returns:
@@ -34,7 +37,7 @@ class ItemManagementServer:
         return jsonify([item.to_json_dict() for item in all_items])
     
     @ServerHelper.login_required
-    def retrieve_item_details(self, item_uuid: str) -> Dict[str, Union[str, int]]:
+    def retrieve_item_details(self, item_uuid: str) -> wrappers.Response:
         """
         Retrieves single item details.
         Inputs:

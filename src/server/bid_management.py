@@ -23,6 +23,9 @@ class BidManagementServer:
         self.auto_bid_database_client: AutoBidDatabaseClient = AutoBidDatabaseClient()
 
     def map_endpoints(self, app: Flask):
+        """
+        Maps all bid management server routes to the corresponding methods.
+        """
         app.add_url_rule(
             BidManagementServerRoutes.CREATE_BID, endpoint="submit_a_bid",
             view_func=self.submit_a_bid, methods=['POST'])
@@ -36,7 +39,12 @@ class BidManagementServer:
             view_func=self.register_user_auto_bid_configuration, methods=['POST'])
     
     @ServerHelper.login_required
-    def register_user_auto_bid_configuration(self):
+    def register_user_auto_bid_configuration(self) -> wrappers.Response:
+        """
+        Registers user auto bid configuration.
+        Returns:
+            - Http response to the client.
+        """
         request_data: Dict[str, str] = request.get_json()
         max_bid_amount_in_usd: str = request_data.get('max_bid_amount_in_usd')
         bidder_uuid: str = request_data.get('bidder_uuid')
@@ -54,7 +62,12 @@ class BidManagementServer:
 
     
     @ServerHelper.login_required
-    def register_auto_bid(self):
+    def register_auto_bid(self) -> wrappers.Response:
+        """
+        Registers auto bid on an item.
+        Returns:
+            - Http response indicating the success or failure of item auto bid registration.
+        """
         request_data: Dict[str, str] = request.get_json()
         bid_item_uuid: str = request_data.get('bid_item_uuid')
         bidder_uuid: str = request_data.get('bidder_uuid')
@@ -80,7 +93,12 @@ class BidManagementServer:
         return jsonify(new_auto_bid.to_json_dict())
 
     @ServerHelper.login_required
-    def submit_a_bid(self):
+    def submit_a_bid(self) -> wrappers.Response:
+        """
+        Submits the item bid.
+        Returns:
+            - Http response indicating the success or failure of item bid.
+        """
         request_data: Dict[str, str] = request.get_json()
         bid_price_in_usd: int = int(request_data.get('bid_price_in_usd'))
         bid_item_uuid: str = request_data.get('bid_item_uuid')
@@ -105,7 +123,12 @@ class BidManagementServer:
         return new_bid_response
     
     @ServerHelper.login_required
-    def place_a_bid(self, bid_item_uuid: str, bidder_uuid: str, bid_price_in_usd: int) -> Bid:
+    def place_a_bid(self, bid_item_uuid: str, bidder_uuid: str, bid_price_in_usd: int) -> wrappers.Response:
+        """
+        Places an item bid with a given amount.
+        Returns:
+            - Http response indicating the success or failure of item bid placement.
+        """
         # Check the bid close date.
         item_close_date: datetime.datetime = \
             self.item_database_client.retrieve_item_close_date(item_uuid=bid_item_uuid)

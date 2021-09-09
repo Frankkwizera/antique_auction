@@ -5,7 +5,7 @@ from src.storage.database_client import UserDatabaseClient
 from src.storage.database_tables import User
 from src.server.server_helper import ServerHelper
 from src.get_app import get_app
-from flask import jsonify, Flask, session, request
+from flask import jsonify, Flask, session, request, wrappers
 from flask_api import status
 from typing import Dict
 
@@ -19,11 +19,14 @@ class UserManagementServer:
         self.user_database_client: UserDatabaseClient = UserDatabaseClient()
 
     def map_endpoints(self, app: Flask):
+        """
+        Maps all user management server routes to the corresponding methods.
+        """
         app.add_url_rule(
             UserManagementServerRoutes.USER_LOGIN, endpoint="user_login",
             view_func=self.user_login, methods=['POST'])
 
-    def user_login(self) -> Dict[str, str]:
+    def user_login(self) -> wrappers.Response:
         """
         Authenticates the user in the system.
         """
