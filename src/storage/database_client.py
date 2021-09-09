@@ -4,7 +4,7 @@ from src.storage.database_provider import db_provider
 from sqlalchemy.orm.session import sessionmaker as Session
 from flask_sqlalchemy import SQLAlchemy
 from src.storage.database_tables import User, Item, Bid, AutoBid
-from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 from src.shared.constants import GeneralConstants
 from flask import Flask
 from typing import List
@@ -41,6 +41,14 @@ class UserDatabaseClient(DatabaseClient):
         new_user: User = User(user_names=user_names, user_email=user_email, user_password_hash=user_password_hash)
         self.add_to_database(records=[new_user])
         return new_user
+    
+    def authenticate_user(self, user_email: str, user_password: str) -> User:
+        user: User = self.session.query(User).filter(User.user_email == user_email).first()
+        print("<<<<<<< user.user_password_hash: ", user.user_password_hash)
+        print("<<<<<<< user_password: ", user_password)
+        if user and check_password_hash(user.user_password_hash, user_password):
+            return user
+        return None
     
     def check_if_user_exists(self, user_uuid: str) -> bool:
         """

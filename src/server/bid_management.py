@@ -30,6 +30,7 @@ class BidManagementServer:
             BidManagementServerRoutes.REGISTER_AUTO_BID, endpoint="register_auto_bid",
             view_func=self.register_auto_bid, methods=['POST'])
     
+    @ServerHelper.login_required
     def register_auto_bid(self):
         request_data: Dict[str, str] = request.get_json()
         bid_item_uuid: str = request_data.get('bid_item_uuid')
@@ -56,6 +57,7 @@ class BidManagementServer:
                 bid_item_uuid=bid_item_uuid, bidder_uuid=bidder_uuid, max_bid_amount_in_usd=max_bid_amount_in_usd)
         return jsonify(new_auto_bid.to_json_dict())
 
+    @ServerHelper.login_required
     def submit_a_bid(self):
         request_data: Dict[str, str] = request.get_json()
         bid_price_in_usd: int = int(request_data.get('bid_price_in_usd'))
@@ -79,6 +81,7 @@ class BidManagementServer:
         new_bid: Bid = self.place_a_bid(bid_item_uuid=bid_item_uuid, bidder_uuid=bidder_uuid, bid_price_in_usd=bid_price_in_usd)
         return jsonify(new_bid.to_json_dict())
     
+    @ServerHelper.login_required
     def place_a_bid(self, bid_item_uuid: str, bidder_uuid: str, bid_price_in_usd: int) -> Bid:
         # Check if user has balance greater than suggested bid_price_in_usd.
         new_bid: Bid = self.bid_database_client.create_item_bid(
