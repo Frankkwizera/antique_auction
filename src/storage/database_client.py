@@ -124,8 +124,12 @@ class AutoBidDatabaseClient(DatabaseClient):
     def __init__(self, *args, **kwargs):
         DatabaseClient.__init__(self, *args, **kwargs)
     
-    def register_auto_bid(self, bid_item_uuid: str, bidder_uuid: str) -> AutoBid:
-        auto_bid: AutoBid = AutoBid(bid_item_uuid=bid_item_uuid, bidder_uuid=bidder_uuid)
+    def register_auto_bid(
+            self, bid_item_uuid: str, bidder_uuid: str,
+            max_bid_amount_in_usd: int) -> AutoBid:
+        auto_bid: AutoBid = AutoBid(
+            bid_item_uuid=bid_item_uuid, bidder_uuid=bidder_uuid, 
+            max_bid_amount_in_usd=max_bid_amount_in_usd)
         self.add_to_database(records=[auto_bid])
         return auto_bid
     
@@ -133,3 +137,15 @@ class AutoBidDatabaseClient(DatabaseClient):
         return self.session.query(AutoBid).filter(
             AutoBid.bid_item_uuid == bid_item_uuid, 
             AutoBid.bidder_uuid == bidder_uuid).scalar() is not None
+    
+    def retrieve_item_auto_bidders(self, item_uuid: str) -> List[AutoBid]:
+        return self.session.query(AutoBid).filter(
+            AutoBid.bid_item_uuid == item_uuid).all()
+    
+    def retrieve_item_auto_bidders_with_enough_funds(
+            self, item_uuid: str, highest_bider_uuid: str, current_highest_bid: int) -> List[AutoBid]:
+        return self.session.query(AutoBid).filter(
+            AutoBid.bid_item_uuid == item_uuid,
+            AutoBid.bidder_uuid != highest_bider_uuid,
+            AutoBid.max_bid_amount_in_usd > current_highest_bid).all()
+        

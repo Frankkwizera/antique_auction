@@ -1,7 +1,7 @@
 __author__ = "Frank Kwizera"
 
 from src.shared.server_routes import ItemManagementServerRoutes
-from src.storage.database_client import ItemDatabaseClient, BidDatabaseClient
+from src.storage.database_client import ItemDatabaseClient, BidDatabaseClient, AutoBidDatabaseClient
 from src.storage.database_tables import Item, Bid
 from src.server.server_helper import ServerHelper
 from flask import jsonify, Flask
@@ -17,6 +17,7 @@ class ItemManagementServer:
         # Initiate database clients.
         self.item_database_client: ItemDatabaseClient = ItemDatabaseClient()
         self.bid_database_client: BidDatabaseClient = BidDatabaseClient()
+        self.auto_bid_database_client: AutoBidDatabaseClient = AutoBidDatabaseClient()
 
     def map_endpoints(self, app: Flask):
         app.add_url_rule(ItemManagementServerRoutes.RETRIEVE_ALL_ITEMS, endpoint="retrieve_all_items", view_func=self.retrieve_all_items, methods=['GET'])
@@ -43,11 +44,18 @@ class ItemManagementServer:
         if not item:
             return ServerHelper.create_item_not_found_message()
         
-        # Retrieve registered bids.
-        item_bids: List[Bid] = self.bid_database_client.retrieve_item_bids(item_uuid=item.item_uuid)
         item_dict: Dict[str, Union[str, int]] = item.to_json_dict()
+        # Retrieve registered bids.
         item_dict['item_bids'] = []
+        item_bids: List[Bid] = self.bid_database_client.retrieve_item_bids(item_uuid=item.item_uuid)
         for item_bid in item_bids:
             item_dict['item_bids'].append(item_bid.to_json_dict())
+
+        item_dict['item_auto_bidders'] = []
+        item_auto_bidders: List[AutoBid] = \
+            self.auto_bid_database_client.retrieve_item_auto_bidders(item_uuid=item.item_uuid)
+        
+        for item_auto_bidder in item_auto_bidders:
+            item_dict['item_auto_bidders'].append(item_auto_bidder.to_json_dict())
 
         return jsonify(item_dict)
