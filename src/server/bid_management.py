@@ -71,7 +71,7 @@ class BidManagementServer:
 
         # Check if user exists.
         if not self.user_database_client.check_if_user_exists(user_uuid=bidder_uuid):
-            return ServerHelper.create_item_not_found_message(message=f'User with uuid {bid_item_uuid} does not exists.')
+            return ServerHelper.create_item_not_found_message(message=f'User with uuid {bidder_uuid} does not exists.')
 
         # Check if item exists.
         if not self.item_database_client.check_if_item_exists(item_uuid=bid_item_uuid):
